@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import requests
+from bs4 import BeautifulSoup
 
 
 def check_for_redirect(response):
@@ -27,7 +28,23 @@ def download_books():
             file.write(response.text)
 
 
+def get_name_and_author():
+    url = 'https://tululu.org/b1/'
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'lxml')
+    title_tag = soup.find('table').find('h1')
+    title_text = title_tag.text
+    book_card = title_text.split(sep='::')
+    title = book_card[0].strip()
+    author = book_card[1].strip()
+
+    print(f'Title: {title}', f'Author: {author}', sep='\n')
+
+
 def main():
+    get_name_and_author()
+    return
     download_books()
 
 
