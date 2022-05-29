@@ -1,7 +1,9 @@
+import os
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
+from pathvalidate import sanitize_filename
 
 
 def check_for_redirect(response):
@@ -42,9 +44,31 @@ def get_name_and_author():
     print(f'Title: {title}', f'Author: {author}', sep='\n')
 
 
+def download_txt(url, filename, folder='books'):
+    """Функция для скачивания текстовых файлов.
+    Args:
+        url (str): Cсылка на текст, который хочется скачать.
+        filename (str): Имя файла, с которым сохранять.
+        folder (str): Папка, куда сохранять.
+    Returns:
+        str: Путь до файла, куда сохранён текст.
+    """
+    valid_filename = f'{sanitize_filename(filename)}.txt'
+    return os.path.join(folder, valid_filename)
+
+
 def main():
-    get_name_and_author()
+    url = 'http://tululu.org/txt.php?id=1'
+    filepath = download_txt(url, 'Алиби')
+    print(filepath)  # Выведется books/Алиби.txt
+    filepath = download_txt(url, 'Али/би', folder='books')
+    print(filepath)  # Выведется books/Алиби.txt
+
+    filepath = download_txt(url, 'Али\\би', folder='txt')
+    print(filepath)  # Выведется txt/Алиби.txt
+
     return
+    get_name_and_author()
     download_books()
 
 
