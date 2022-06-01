@@ -80,7 +80,7 @@ def download_txt(url, filename, folder):
         file.write(response.text)
 
 
-def download_books():
+def main():
     image_folder = 'images'
     txt_folder = 'books'
     Path(f'./{image_folder}').mkdir(exist_ok=True)
@@ -97,7 +97,7 @@ def download_books():
         book_card = parse_book_page(book_page_response)
         print(book_card['title'])
         print(book_card['genres'], '\n')
-        continue
+
         download_image(book_card['image'], image_folder)
 
         title = book_card['title']
@@ -106,10 +106,6 @@ def download_books():
             f'{book_id}.{title}',
             txt_folder,
         )
-
-
-def main():
-    download_books()
 
 
 if __name__ == '__main__':
