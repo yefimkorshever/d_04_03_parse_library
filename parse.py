@@ -18,9 +18,19 @@ def get_response(url):
     return response
 
 
+def parse_comments(soup):
+    comments = []
+    comments_tags = soup.find_all('div', class_='texts')
+    for comment_tag in comments_tags:
+        comments.append(comment_tag.find('span').text)
+
+    return comments
+
+
 def parse_book_page(response):
+
     soup = BeautifulSoup(response.text, 'lxml')
-    div_content = soup.find('div', id="content")
+    div_content = soup.find('div', id='content')
     title_text = div_content.find('h1').text
     book_name = title_text.split(sep='::')
     img_src = div_content.find('img')['src']
@@ -29,12 +39,11 @@ def parse_book_page(response):
         'title': book_name[0].strip(),
         'author': book_name[1].strip(),
         'image': urljoin(response.url, img_src),
+        'comments': parse_comments(soup),
     }
 
 
-def download_image(url):
-    folder = 'images'
-    Path(f'./{folder}').mkdir(exist_ok=True)
+def download_image(url, folder):
     response = get_response(url)
     try:
         check_for_redirect(response)
@@ -48,9 +57,7 @@ def download_image(url):
         file.write(response.content)
 
 
-def download_txt(url, filename):
-    folder = 'books'
-    Path(f'./{folder}').mkdir(exist_ok=True)
+def download_txt(url, filename, folder):
     response = get_response(url)
     try:
         check_for_redirect(response)
@@ -64,6 +71,10 @@ def download_txt(url, filename):
 
 
 def download_books():
+    image_folder = 'images'
+    txt_folder = 'books'
+    Path(f'./{image_folder}').mkdir(exist_ok=True)
+    Path(f'./{txt_folder}').mkdir(exist_ok=True)
 
     for book_id in range(1, 11):
         head_url = 'https://tululu.org/'
@@ -74,12 +85,18 @@ def download_books():
             continue
 
         book_card = parse_book_page(book_page_response)
-        download_image(book_card['image'])
+        print(book_card['title'])
+        for comment in book_card['comments']:
+            print(comment)
+        print('\n')
+        continue
+        download_image(book_card['image'], image_folder)
 
         title = book_card['title']
         download_txt(
             f'{head_url}txt.php?id={book_id}',
             f'{book_id}.{title}',
+            txt_folder,
         )
 
 
