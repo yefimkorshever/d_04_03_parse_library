@@ -27,6 +27,15 @@ def parse_comments(soup):
     return comments
 
 
+def pars_genres(soup):
+    genres = []
+    genres_links = soup.find('span', class_='d_book').find_all('a')
+    for genre_link in genres_links:
+        genres.append(genre_link.text)
+
+    return genres
+
+
 def parse_book_page(response):
 
     soup = BeautifulSoup(response.text, 'lxml')
@@ -40,6 +49,7 @@ def parse_book_page(response):
         'author': book_name[1].strip(),
         'image': urljoin(response.url, img_src),
         'comments': parse_comments(soup),
+        'genres': pars_genres(soup),
     }
 
 
@@ -86,9 +96,7 @@ def download_books():
 
         book_card = parse_book_page(book_page_response)
         print(book_card['title'])
-        for comment in book_card['comments']:
-            print(comment)
-        print('\n')
+        print(book_card['genres'], '\n')
         continue
         download_image(book_card['image'], image_folder)
 
