@@ -1,3 +1,4 @@
+import argparse
 import os
 from pathlib import Path
 from urllib.parse import unquote, urljoin, urlsplit
@@ -5,6 +6,26 @@ from urllib.parse import unquote, urljoin, urlsplit
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
+
+
+def create_arg_parser():
+    description = 'The program parses tululu.org library'
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument('start_id',
+                        help='start book id, by default: 1',
+                        default=1,
+                        nargs='?',
+                        type=int,
+                        )
+
+    parser.add_argument('end_id',
+                        help='end book id, by default: 10',
+                        default=10,
+                        nargs='?',
+                        type=int,
+                        )
+    return parser
 
 
 def check_for_redirect(response):
@@ -81,12 +102,15 @@ def download_txt(url, filename, folder):
 
 
 def main():
+    arg_parser = create_arg_parser()
+    namespace = arg_parser.parse_args()
+
     image_folder = 'images'
     txt_folder = 'books'
     Path(f'./{image_folder}').mkdir(exist_ok=True)
     Path(f'./{txt_folder}').mkdir(exist_ok=True)
 
-    for book_id in range(1, 11):
+    for book_id in range(namespace.start_id, namespace.end_id + 1):
         head_url = 'https://tululu.org/'
         book_page_response = get_response(f'{head_url}b{book_id}')
         try:
