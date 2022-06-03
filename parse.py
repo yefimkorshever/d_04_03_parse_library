@@ -33,12 +33,6 @@ def check_for_redirect(response):
         raise requests.HTTPError()
 
 
-def get_response(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    return response
-
-
 def parse_comments(soup):
     comments = []
     comments_tags = soup.find_all('div', class_='texts')
@@ -75,7 +69,8 @@ def parse_book_page(response):
 
 
 def download_image(url, folder):
-    response = get_response(url)
+    response = requests.get(url)
+    response.raise_for_status()
     try:
         check_for_redirect(response)
     except requests.RequestException:
@@ -89,7 +84,8 @@ def download_image(url, folder):
 
 
 def download_txt(url, filename, folder):
-    response = get_response(url)
+    response = requests.get(url)
+    response.raise_for_status()
     try:
         check_for_redirect(response)
     except requests.RequestException:
@@ -112,7 +108,8 @@ def main():
 
     for book_id in range(namespace.start_id, namespace.end_id + 1):
         head_url = 'https://tululu.org/'
-        book_page_response = get_response(f'{head_url}b{book_id}')
+        book_page_response = requests.get(f'{head_url}b{book_id}')
+        book_page_response.raise_for_status()
         try:
             check_for_redirect(book_page_response)
         except requests.RequestException:
