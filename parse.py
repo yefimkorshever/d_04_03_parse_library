@@ -1,6 +1,8 @@
 import argparse
 import os
+import sys
 from pathlib import Path
+from time import sleep
 from urllib.parse import unquote, urljoin, urlsplit
 
 import requests
@@ -30,7 +32,7 @@ def create_arg_parser():
 
 def check_for_redirect(response):
     if response.url == 'https://tululu.org/' and response.history:
-        raise requests.HTTPError()
+        raise requests.HTTPError('redirected')
 
 
 def parse_comments(soup):
@@ -71,10 +73,7 @@ def parse_book_page(response):
 def download_image(url, folder):
     response = requests.get(url)
     response.raise_for_status()
-    try:
-        check_for_redirect(response)
-    except requests.RequestException:
-        return
+    check_for_redirect(response)
 
     filename = urlsplit(url).path.split(sep='/')[-1]
     valid_filename = unquote(filename)
@@ -86,10 +85,7 @@ def download_image(url, folder):
 def download_txt(url, filename, folder):
     response = requests.get(url)
     response.raise_for_status()
-    try:
-        check_for_redirect(response)
-    except requests.RequestException:
-        return
+    check_for_redirect(response)
 
     valid_filename = f'{sanitize_filename(filename)}.txt'
     file_path = os.path.join(folder, valid_filename)
@@ -107,26 +103,70 @@ def main():
     Path(f'./{txt_folder}').mkdir(exist_ok=True)
 
     for book_id in range(namespace.start_id, namespace.end_id + 1):
+        print('\n')
         head_url = 'https://tululu.org/'
-        book_page_response = requests.get(f'{head_url}b{book_id}')
-        book_page_response.raise_for_status()
+        url = f'{head_url}b{book_id}'
+
         try:
+            book_page_response = requests.get(url)
+            book_page_response.raise_for_status()
             check_for_redirect(book_page_response)
-        except requests.RequestException:
+        except requests.exceptions.HTTPError as http_fail:
+            print(
+                f'failed to download book{book_id} page; {http_fail}',
+                file=sys.stderr
+            )
+            continue
+        except requests.exceptions.ConnectionError as connect_fail:
+            print(
+                f'failed to download book{book_id} page (connection error);',
+                connect_fail,
+                file=sys.stderr
+            )
+            sleep(2)
             continue
 
         book_card = parse_book_page(book_page_response)
         print(book_card['title'])
-        print(book_card['genres'], '\n')
+        print(book_card['genres'])
 
-        download_image(book_card['image'], image_folder)
+        try:
+            download_image(book_card['image'], image_folder)
+        except requests.exceptions.HTTPError as http_fail:
+            print(
+                f'failed to download book{book_id} image;',
+                http_fail,
+                file=sys.stderr
+            )
+        except requests.exceptions.ConnectionError as connect_fail:
+            print(
+                f'failed to download book{book_id} image (connection error);',
+                connect_fail,
+                file=sys.stderr
+            )
+            sleep(2)
 
         title = book_card['title']
-        download_txt(
-            f'{head_url}txt.php?id={book_id}',
-            f'{book_id}.{title}',
-            txt_folder,
-        )
+
+        try:
+            download_txt(
+                f'{head_url}txt.php?id={book_id}',
+                f'{book_id}.{title}',
+                txt_folder,
+            )
+        except requests.exceptions.HTTPError as http_fail:
+            print(
+                f'failed to download book{book_id} text;',
+                http_fail,
+                file=sys.stderr
+            )
+        except requests.exceptions.ConnectionError as connect_fail:
+            print(
+                f'failed to download book{book_id} text (connection error);',
+                connect_fail,
+                file=sys.stderr
+            )
+            sleep(2)
 
 
 if __name__ == '__main__':
