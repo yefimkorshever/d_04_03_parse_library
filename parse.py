@@ -58,12 +58,12 @@ def parse_book_page(response):
     soup = BeautifulSoup(response.text, 'lxml')
     div_content = soup.find('div', id='content')
     title_text = div_content.find('h1').text
-    book_name = title_text.split(sep='::')
+    title, author = title_text.split(sep='::')
     img_src = div_content.find('img')['src']
 
     return {
-        'title': book_name[0].strip(),
-        'author': book_name[1].strip(),
+        'title': title.strip(),
+        'author': author.strip(),
         'image': urljoin(response.url, img_src),
         'comments': parse_comments(soup),
         'genres': pars_genres(soup),
