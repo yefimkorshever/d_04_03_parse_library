@@ -30,8 +30,8 @@ def create_arg_parser():
     return parser
 
 
-def check_for_redirect(response):
-    if response.url == 'https://tululu.org/' and response.history:
+def check_for_redirect(response, head_url):
+    if response.url == head_url:
         raise requests.HTTPError('redirected')
 
 
@@ -54,10 +54,10 @@ def parse_book_page(response):
     }
 
 
-def download_image(url, folder):
+def download_image(url, folder, head_url):
     response = requests.get(url)
     response.raise_for_status()
-    check_for_redirect(response)
+    check_for_redirect(response, head_url)
 
     filename = urlsplit(url).path.split(sep='/')[-1]
     valid_filename = unquote(filename)
@@ -66,10 +66,10 @@ def download_image(url, folder):
         file.write(response.content)
 
 
-def download_txt(url, filename, folder):
+def download_txt(url, filename, folder, head_url):
     response = requests.get(url)
     response.raise_for_status()
-    check_for_redirect(response)
+    check_for_redirect(response, head_url)
 
     valid_filename = f'{sanitize_filename(filename)}.txt'
     file_path = os.path.join(folder, valid_filename)
@@ -92,9 +92,9 @@ def main():
         url = f'{head_url}b{book_id}'
 
         try:
-            book_page_response = requests.get(url)
-            book_page_response.raise_for_status()
-            check_for_redirect(book_page_response)
+            response = requests.get(url)
+            response.raise_for_status()
+            check_for_redirect(response, head_url)
         except requests.exceptions.HTTPError as http_fail:
             print(
                 f'failed to download book{book_id} page; {http_fail}',
@@ -110,12 +110,12 @@ def main():
             sleep(2)
             continue
 
-        book_card = parse_book_page(book_page_response)
+        book_card = parse_book_page(response)
         print(book_card['title'])
         print(book_card['genres'])
 
         try:
-            download_image(book_card['image'], image_folder)
+            download_image(book_card['image'], image_folder, head_url)
         except requests.exceptions.HTTPError as http_fail:
             print(
                 f'failed to download book{book_id} image;',
@@ -137,6 +137,7 @@ def main():
                 f'{head_url}txt.php?id={book_id}',
                 f'{book_id}.{title}',
                 txt_folder,
+                head_url
             )
         except requests.exceptions.HTTPError as http_fail:
             print(
