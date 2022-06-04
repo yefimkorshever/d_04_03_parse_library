@@ -66,8 +66,8 @@ def download_image(url, folder, head_url):
         file.write(response.content)
 
 
-def download_txt(url, filename, folder, head_url):
-    response = requests.get(url)
+def download_txt(url, payload, filename, folder, head_url):
+    response = requests.get(url, params=payload)
     response.raise_for_status()
     check_for_redirect(response, head_url)
 
@@ -131,10 +131,11 @@ def main():
             sleep(2)
 
         title = book_card['title']
-
+        payload = {'id': book_id}
         try:
             download_txt(
-                f'{head_url}txt.php?id={book_id}',
+                f'{head_url}txt.php',
+                payload,
                 f'{book_id}.{title}',
                 txt_folder,
                 head_url
