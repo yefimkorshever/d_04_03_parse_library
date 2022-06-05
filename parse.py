@@ -30,8 +30,8 @@ def create_arg_parser():
     return parser
 
 
-def check_for_redirect(response, head_url):
-    if response.url == head_url:
+def check_for_redirect(response):
+    if response.history:
         raise requests.HTTPError('redirected')
 
 
@@ -58,10 +58,10 @@ def parse_book_page(response):
     }
 
 
-def download_image(url, folder, head_url):
+def download_image(url, folder):
     response = requests.get(url)
     response.raise_for_status()
-    check_for_redirect(response, head_url)
+    check_for_redirect(response)
 
     filename = urlsplit(url).path.split(sep='/')[-1]
     valid_filename = unquote(filename)
@@ -70,10 +70,10 @@ def download_image(url, folder, head_url):
         file.write(response.content)
 
 
-def download_txt(url, payload, filename, folder, head_url):
+def download_txt(url, payload, filename, folder):
     response = requests.get(url, params=payload)
     response.raise_for_status()
-    check_for_redirect(response, head_url)
+    check_for_redirect(response)
 
     valid_filename = f'{sanitize_filename(filename)}.txt'
     file_path = os.path.join(folder, valid_filename)
@@ -93,12 +93,12 @@ def main():
     for book_id in range(namespace.start_id, namespace.end_id + 1):
         print('\n')
         head_url = 'https://tululu.org/'
-        url = f'{head_url}b{book_id}'
+        url = f'{head_url}b{book_id}/'
 
         try:
             response = requests.get(url)
             response.raise_for_status()
-            check_for_redirect(response, head_url)
+            check_for_redirect(response)
 
             book_card = parse_book_page(response)
 
@@ -111,10 +111,9 @@ def main():
                 f'{head_url}txt.php',
                 payload,
                 f'{book_id}.{title}',
-                txt_folder,
-                head_url
+                txt_folder
             )
-            download_image(book_card['image'], image_folder, head_url)
+            download_image(book_card['image'], image_folder)
         except requests.exceptions.HTTPError as http_fail:
             print(
                 f'HTTP error occurred while downloading book {book_id}',
