@@ -42,15 +42,19 @@ def parse_book_page(response):
     title_text = div_content.find('h1').text
     title, author = title_text.split(sep='::')
     img_src = div_content.find('img')['src']
+
     comments_tags = soup.find_all('div', class_='texts')
+    comments = [comment_tag.find('span').text for comment_tag in comments_tags]
+
     genres_links = soup.find('span', class_='d_book').find_all('a')
+    genres = [genre_link.text for genre_link in genres_links]
 
     return {
         'title': title.strip(),
         'author': author.strip(),
         'image': urljoin(response.url, img_src),
-        'comments': [x.find('span').text for x in comments_tags],
-        'genres': [x.text for x in genres_links],
+        'comments': comments,
+        'genres': genres,
     }
 
 
