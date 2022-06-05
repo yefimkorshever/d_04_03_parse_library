@@ -95,44 +95,14 @@ def main():
             response = requests.get(url)
             response.raise_for_status()
             check_for_redirect(response, head_url)
-        except requests.exceptions.HTTPError as http_fail:
-            print(
-                f'failed to download book{book_id} page; {http_fail}',
-                file=sys.stderr
-            )
-            continue
-        except requests.exceptions.ConnectionError as connect_fail:
-            print(
-                f'failed to download book{book_id} page (connection error);',
-                connect_fail,
-                file=sys.stderr
-            )
-            sleep(2)
-            continue
 
-        book_card = parse_book_page(response)
-        print(book_card['title'])
-        print(book_card['genres'])
+            book_card = parse_book_page(response)
 
-        try:
-            download_image(book_card['image'], image_folder, head_url)
-        except requests.exceptions.HTTPError as http_fail:
-            print(
-                f'failed to download book{book_id} image;',
-                http_fail,
-                file=sys.stderr
-            )
-        except requests.exceptions.ConnectionError as connect_fail:
-            print(
-                f'failed to download book{book_id} image (connection error);',
-                connect_fail,
-                file=sys.stderr
-            )
-            sleep(2)
+            print(book_card['title'])
+            print(book_card['genres'])
 
-        title = book_card['title']
-        payload = {'id': book_id}
-        try:
+            title = book_card['title']
+            payload = {'id': book_id}
             download_txt(
                 f'{head_url}txt.php',
                 payload,
@@ -140,15 +110,16 @@ def main():
                 txt_folder,
                 head_url
             )
+            download_image(book_card['image'], image_folder, head_url)
         except requests.exceptions.HTTPError as http_fail:
             print(
-                f'failed to download book{book_id} text;',
+                f'HTTP error occurred while downloading book {book_id}',
                 http_fail,
                 file=sys.stderr
             )
         except requests.exceptions.ConnectionError as connect_fail:
             print(
-                f'failed to download book{book_id} text (connection error);',
+                f'Connection error occurred while downloading book {book_id}',
                 connect_fail,
                 file=sys.stderr
             )
